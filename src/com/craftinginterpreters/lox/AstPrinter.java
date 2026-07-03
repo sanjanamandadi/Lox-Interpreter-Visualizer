@@ -1,5 +1,7 @@
 package com.craftinginterpreters.lox;
 
+import java.util.List;
+
 class AstPrinter implements Expr.Visitor<String> {
   String print(Expr expr) {
     return expr.accept(this);
@@ -41,15 +43,17 @@ class AstPrinter implements Expr.Visitor<String> {
   }
 
   public static void main(String[] args) {
-    Expr expression = new Expr.Binary(
-        new Expr.Unary(
-            new Token(TokenType.MINUS, "-", null, 1),
-            new Expr.Literal(123)),
-        new Token(TokenType.STAR, "*", null, 1),
-        new Expr.Grouping(
-            new Expr.Literal(45.67)));
+      // 1. Scan the raw text into tokens
+      Scanner scanner = new Scanner("4 + 6 / 3 - 1");
+      List<Token> tokens = scanner.scanTokens();
 
-    System.out.println(new AstPrinter().print(expression));
+      // 2. Parse the tokens into a dynamic AST tree
+      Parser parser = new Parser(tokens);
+      Expr expression = parser.parse();
+
+      // 3. Print the resulting tree!
+      if (expression != null)
+        System.out.println(new AstPrinter().print(expression));
   }
 
 }
