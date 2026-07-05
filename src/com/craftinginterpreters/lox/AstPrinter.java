@@ -29,6 +29,16 @@ class AstPrinter implements Expr.Visitor<String> {
     return parenthesize(expr.operator.lexeme, expr.right);
   }
 
+  @Override
+  public String visitAssignExpr(Expr.Assign expr) {
+    return parenthesize("= " + expr.name.lexeme, expr.value);
+  }
+
+  @Override
+  public String visitVariableExpr(Expr.Variable expr) {
+    return expr.name.lexeme;
+  }
+
   private String parenthesize(String name, Expr... exprs) {
     StringBuilder builder = new StringBuilder();
 
@@ -43,6 +53,7 @@ class AstPrinter implements Expr.Visitor<String> {
   }
 
   public static void main(String[] args) {
+      /*
       // 1. Scan the raw text into tokens
       Scanner scanner = new Scanner("4 + 6 / 3 - 1");
       List<Token> tokens = scanner.scanTokens();
@@ -54,6 +65,7 @@ class AstPrinter implements Expr.Visitor<String> {
       // 3. Print the resulting tree!
       if (expression != null)
         System.out.println(new AstPrinter().print(expression));
+      */
   }
 
 }
