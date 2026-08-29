@@ -27,8 +27,8 @@ import java.util.concurrent.Executors;
  *   javac -d bin src/com/craftinginterpreters/lox/*.java
  *   java -cp bin com.craftinginterpreters.lox.TraceServer
  *
- * Configuration comes from the environment: LOX_TRACE_PORT (default 8080),
- * LOX_TRACE_HOST (default 127.0.0.1), LOX_TRACE_ORIGIN (default *).
+ * Configuration comes from the environment: PORT or LOX_TRACE_PORT (default 8080),
+ * HOST or LOX_TRACE_HOST (default 0.0.0.0), LOX_TRACE_ORIGIN (default *).
  *
  * On security: the endpoint runs submitted Lox source, so it is worth being
  * precise about what that can do. Lox at chapters 1-9 has no functions, classes,
@@ -42,14 +42,15 @@ import java.util.concurrent.Executors;
 public class TraceServer {
 
   private static final int DEFAULT_PORT = 8080;
-  private static final String DEFAULT_HOST = "127.0.0.1";
+  private static final String DEFAULT_HOST = "0.0.0.0";
 
   /** Refuse bodies larger than this outright, before allocating a String. */
   private static final int MAX_BODY_BYTES = 64 * 1024;
 
   public static void main(String[] args) throws IOException {
-    int port = intFromEnv("LOX_TRACE_PORT", DEFAULT_PORT);
-    String host = stringFromEnv("LOX_TRACE_HOST", DEFAULT_HOST);
+
+    int port = intFromEnv("PORT", intFromEnv("LOX_TRACE_PORT", DEFAULT_PORT));
+    String host = stringFromEnv("HOST", stringFromEnv("LOX_TRACE_HOST", DEFAULT_HOST));
 
     HttpServer server = HttpServer.create(new InetSocketAddress(host, port), 0);
     server.createContext("/api/trace", TraceServer::handleTrace);
