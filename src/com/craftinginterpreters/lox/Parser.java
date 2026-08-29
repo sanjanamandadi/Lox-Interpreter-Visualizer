@@ -2,7 +2,11 @@ package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -11,6 +15,35 @@ public class Parser {
 
   private final List<Token> tokens;
   private int current = 0;
+
+  /**
+   * Statements produced by forStatement(). A `for` loop leaves no node of its
+   * own behind -- it is desugared into a Block wrapping a While -- so once parsing
+   * finishes, this set is the only remaining record that the source said "for".
+   * {@link TraceExporter} uses it to label those nodes in the visualizer.
+   *
+   * Identity-based, because two distinct loops can be structurally equal.
+   */
+  final Set<Stmt> desugaredForLoops =
+      Collections.newSetFromMap(new IdentityHashMap<Stmt, Boolean>());
+
+  /**
+   * Source line for each node that doesn't carry a Token of its own.
+   *
+   * Most nodes can answer "what line am I on?" from a field -- Stmt.Var has its
+   * name token, Expr.Binary has its operator. But Stmt.Block, Stmt.Print,
+   * Stmt.If, Stmt.While, Stmt.Expression, Expr.Literal and Expr.Grouping hold no
+   * token at all, and the parser is the last place in the pipeline that knows.
+   * Recording it here keeps Expr.java and Stmt.java exactly as GenerateAst emits
+   * them, at the cost of one side table.
+   */
+  final Map<Object, Integer> sourceLines = new IdentityHashMap<>();
+
+  /** Remember `node`'s line as `token`'s line, and return the node for chaining. */
+  private <T> T at(Token token, T node) {
+    sourceLines.put(node, token.line);
+    return node;
+  }
 
   Parser(List<Token> tokens) {
     this.tokens = tokens;
@@ -34,12 +67,16 @@ public class Parser {
     if (match(IF)) return ifStatement();
     if (match(PRINT)) return printStatement();
     if (match(WHILE)) return whileStatement();
-    if (match(LEFT_BRACE)) return new Stmt.Block(block());
+    if (match(LEFT_BRACE)) return at(previous(), new Stmt.Block(block()));
 
     return expressionStatement();
   }
 
   private Stmt forStatement() {
+    // The 'for' keyword, already consumed by statement(). Every node this method
+    // synthesizes is attributed to this line, since none of them appear in the
+    // source as written.
+    Token keyword = previous();
     consume(LEFT_PAREN, "Expect '(' after 'for'.");
 
     Stmt initializer;
@@ -65,27 +102,29 @@ public class Parser {
     Stmt body = statement();
 
     if (increment != null) {
-      body = new Stmt.Block(
+      body = at(keyword, new Stmt.Block(
           Arrays.asList(
               body,
-              new Stmt.Expression(increment)));
+              at(keyword, new Stmt.Expression(increment)))));
     }
 
-    if (condition == null) condition = new Expr.Literal(true);
-    body = new Stmt.While(condition, body);
+    if (condition == null) condition = at(keyword, new Expr.Literal(true));
+    body = at(keyword, new Stmt.While(condition, body));
 
     if (initializer != null) {
-      body = new Stmt.Block(Arrays.asList(initializer, body));
+      body = at(keyword, new Stmt.Block(Arrays.asList(initializer, body)));
     }
 
+    desugaredForLoops.add(body);
     return body;
   }
 
 
   private Stmt ifStatement() {
+    Token keyword = previous();
     consume(LEFT_PAREN, "Expect '(' after 'if'.");
     Expr condition = expression();
-    consume(RIGHT_PAREN, "Expect ')' after if condition."); 
+    consume(RIGHT_PAREN, "Expect ')' after if condition.");
 
     Stmt thenBranch = statement();
     Stmt elseBranch = null;
@@ -93,7 +132,7 @@ public class Parser {
       elseBranch = statement();
     }
 
-    return new Stmt.If(condition, thenBranch, elseBranch);
+    return at(keyword, new Stmt.If(condition, thenBranch, elseBranch));
   }
 
   private Stmt declaration() {
@@ -108,9 +147,10 @@ public class Parser {
   }
 
   private Stmt printStatement() {
+    Token keyword = previous();
     Expr value = expression();
     consume(SEMICOLON, "Expect ';' after value.");
-    return new Stmt.Print(value);
+    return at(keyword, new Stmt.Print(value));
   }
 
   private Stmt varDeclaration() {
@@ -126,18 +166,20 @@ public class Parser {
   }
 
   private Stmt whileStatement() {
+    Token keyword = previous();
     consume(LEFT_PAREN, "Expect '(' after 'while'.");
     Expr condition = expression();
     consume(RIGHT_PAREN, "Expect ')' after condition.");
     Stmt body = statement();
 
-    return new Stmt.While(condition, body);
+    return at(keyword, new Stmt.While(condition, body));
   }
 
   private Stmt expressionStatement() {
+    Token start = peek();
     Expr expr = expression();
     consume(SEMICOLON, "Expect ';' after expression.");
-    return new Stmt.Expression(expr);
+    return at(start, new Stmt.Expression(expr));
   }
 
   private List<Stmt> block() {
@@ -253,12 +295,12 @@ public class Parser {
   }
 
   private Expr primary() {
-    if (match(FALSE)) return new Expr.Literal(false);
-    if (match(TRUE)) return new Expr.Literal(true);
-    if (match(NIL)) return new Expr.Literal(null);
+    if (match(FALSE)) return at(previous(), new Expr.Literal(false));
+    if (match(TRUE)) return at(previous(), new Expr.Literal(true));
+    if (match(NIL)) return at(previous(), new Expr.Literal(null));
 
     if (match(NUMBER, STRING)) {
-      return new Expr.Literal(previous().literal);
+      return at(previous(), new Expr.Literal(previous().literal));
     }
 
     if (match(IDENTIFIER)) {
@@ -266,9 +308,10 @@ public class Parser {
     }
 
     if (match(LEFT_PAREN)) {
+      Token paren = previous();
       Expr expr = expression();
       consume(RIGHT_PAREN, "Expect ')' after expression.");
-      return new Expr.Grouping(expr);
+      return at(paren, new Expr.Grouping(expr));
     }
 
     throw error(peek(), "Expect expression.");

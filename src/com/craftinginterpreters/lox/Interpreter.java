@@ -4,13 +4,61 @@ import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
+    /**
+     * Optional observer of the tree walk, implemented by {@link TraceExporter}
+     * to record a step-by-step trace for the visualizer. It is null for normal
+     * runs, and the interpreter's behaviour is identical either way -- a probe
+     * only ever reads state, it never influences evaluation.
+     */
+    interface Probe {
+      /** A visitor method is about to run for `node` (null for interpret()). */
+      void enter(String visitor, Object node);
+
+      /** That visitor method returned. `result` is null for statements. */
+      void exit(String visitor, Object node, Object result);
+
+      /** visitPrintStmt wrote a line to stdout. */
+      void printed(String text);
+
+      /** Evaluation was abandoned because of a runtime error. */
+      void failed(RuntimeError error);
+    }
+
     private Environment environment = new Environment();
+    private Probe probe;
+
+    /** Attach a probe (or pass null to detach) before calling interpret(). */
+    void setProbe(Probe probe) {
+      this.probe = probe;
+    }
+
+    /** The innermost environment right now; walk `enclosing` for the full chain. */
+    Environment currentEnvironment() {
+      return environment;
+    }
+
+    /**
+     * The visitor method that handles a node: Expr.Binary -> "visitBinaryExpr",
+     * Stmt.Var -> "visitVarStmt". Deriving the name from the node's class means
+     * the visit methods below need no instrumentation of their own -- the two
+     * dispatch points, evaluate() and execute(), cover all of them.
+     */
+    private static String visitorName(Object node) {
+      String suffix = (node instanceof Expr) ? "Expr" : "Stmt";
+      return "visit" + node.getClass().getSimpleName() + suffix;
+    }
+
     void interpret(List<Stmt> statements) {
     try {
+      if (probe != null) probe.enter("interpret", null);
+
       for (Stmt statement : statements) {
         execute(statement);
       }
+
+      if (probe != null) probe.exit("interpret", null, null);
     } catch (RuntimeError error) {
+      if (probe != null) probe.failed(error);
       Lox.runtimeError(error);
     }
   }
@@ -41,12 +89,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return evaluate(expr.expression);
      }
 
+     // The two dispatch points. When a probe is attached, every recursive
+     // descent into the tree is bracketed by enter/exit here -- which is exactly
+     // what the visualizer draws as the visitor call stack.
+     //
+     // Note the deliberate absence of try/finally: if accept() throws a
+     // RuntimeError, we do NOT report an exit, because the frame did not return
+     // a value. The probe unwinds its own stack when failed() arrives.
      private Object evaluate(Expr expr) {
-        return expr.accept(this);
+        if (probe == null) return expr.accept(this);
+
+        String visitor = visitorName(expr);
+        probe.enter(visitor, expr);
+        Object result = expr.accept(this);
+        probe.exit(visitor, expr, result);
+        return result;
      }
 
      private void execute(Stmt stmt) {
+        if (probe == null) {
+          stmt.accept(this);
+          return;
+        }
+
+        String visitor = visitorName(stmt);
+        probe.enter(visitor, stmt);
         stmt.accept(this);
+        probe.exit(visitor, stmt, null);
      }
 
      void executeBlock(List<Stmt> statements,
@@ -88,7 +157,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
      @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
       Object value = evaluate(stmt.expression);
-      System.out.println(stringify(value));
+      String text = stringify(value);
+      System.out.println(text);
+      if (probe != null) probe.printed(text);
       return null;
     }
 
@@ -212,7 +283,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     return a.equals(b);
   }
 
-  private String stringify(Object object) {
+  /**
+   * How a Lox value is shown to the user. Package-private rather than private so
+   * TraceExporter can format values the same way instead of reimplementing the
+   * trailing-".0" rule and getting it subtly different.
+   */
+  String stringify(Object object) {
     if (object == null) return "nil";
 
     if (object instanceof Double) {

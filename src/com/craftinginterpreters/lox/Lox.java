@@ -9,10 +9,27 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
-  
+
+  /**
+   * Where diagnostics go. Errors are reported from all over the scanner, parser
+   * and interpreter through the static helpers below, so this hook is how
+   * {@link TraceServer} captures them for one request instead of losing them to
+   * the server's stderr. Null means "print to stderr", i.e. normal CLI use.
+   */
+  interface DiagnosticSink {
+    void report(int line, String message);
+  }
+
   private static final Interpreter interpreter = new Interpreter();
+  static DiagnosticSink diagnostics = null;
   static boolean hadError = false;
   static boolean hadRuntimeError = false;
+
+  /** Clear the error flags. The CLI does this per REPL line; the server per request. */
+  static void resetErrors() {
+    hadError = false;
+    hadRuntimeError = false;
+  }
   public static void main(String[] args) throws IOException {
     if (args.length > 1) {
       System.out.println("Usage: jlox [script]");
@@ -56,7 +73,6 @@ public class Lox {
     // Stop if there was a syntax error.
     if (hadError) return;
 
-    //OLD AST PRINTER LINE: System.out.println(new AstPrinter().print(expression));
     interpreter.interpret(statements);
   }
 
@@ -66,8 +82,12 @@ public class Lox {
 
   private static void report(int line, String where,
                              String message) {
-    System.err.println(
-        "[line " + line + "] Error" + where + ": " + message);
+    String text = "Error" + where + ": " + message;
+    if (diagnostics != null) {
+      diagnostics.report(line, text);
+    } else {
+      System.err.println("[line " + line + "] " + text);
+    }
     hadError = true;
   }
 
@@ -80,8 +100,12 @@ public class Lox {
   }
 
   static void runtimeError(RuntimeError error) {
-    System.err.println(error.getMessage() +
-        "\n[line " + error.token.line + "]");
+    if (diagnostics != null) {
+      diagnostics.report(error.token.line, error.getMessage());
+    } else {
+      System.err.println(error.getMessage() +
+          "\n[line " + error.token.line + "]");
+    }
     hadRuntimeError = true;
   }
 

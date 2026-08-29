@@ -1,0 +1,86 @@
+/*
+ * Tailwind v4: this one import replaces v3's @tailwind base/components/utilities
+ * directives, pulling in the reset and making every utility available.
+ */
+@import "tailwindcss";
+
+/*
+ * @theme is Tailwind v4's replacement for tailwind.config.js. Any CSS variable
+ * defined here becomes usable as a utility class:
+ *
+ *   --color-panel: #161b22;   →   bg-panel, text-panel, border-panel
+ *
+ * Defining the palette in one place makes a theme change a one-line edit rather
+ * than a find-and-replace across every component.
+ */
+@theme {
+  /* Surfaces — a dark, editor-like palette */
+  --color-ink: #0d1117; /* page background */
+  --color-panel: #161b22; /* panel background */
+  --color-panel-hi: #1c2333; /* hovered / raised rows */
+  --color-edge: #30363d; /* borders */
+
+  /* Text */
+  --color-dim: #8b949e; /* secondary text */
+  --color-bright: #e6edf3; /* primary text */
+
+  /* Each pipeline phase gets its own accent, used consistently everywhere: the
+     phase badge, the panel headers, and the progress bar. Consistent
+     colour-coding is what builds a mental map of the pipeline. */
+  --color-scan: #d29922; /* amber  — Scanner */
+  --color-parse: #a371f7; /* purple — Parser */
+  --color-runtime: #2f81f7; /* blue   — Interpreter */
+
+  /* Semantic accents */
+  --color-good: #3fb950;
+  --color-bad: #f85149;
+  --color-str: #a5d6ff; /* string literals */
+  --color-num: #79c0ff; /* number literals */
+
+  --font-mono: "Cascadia Code", "JetBrains Mono", ui-monospace, "SF Mono",
+    Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-bright);
+  font-family: var(--font-mono);
+  /* Prevent the whole page from scrolling: each panel scrolls independently,
+     which is what makes a dashboard feel like an app instead of a document. */
+  overflow: hidden;
+}
+
+/* Slim scrollbars, so six scrollable panels don't look cluttered. */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-edge);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* Applied when the active stack frame changes, so the eye can follow what moved. */
+@keyframes flash {
+  from {
+    background-color: color-mix(in srgb, var(--color-runtime) 35%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.animate-flash {
+  animation: flash 600ms ease-out;
+}

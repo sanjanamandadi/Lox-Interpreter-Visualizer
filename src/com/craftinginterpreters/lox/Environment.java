@@ -1,11 +1,16 @@
 package com.craftinginterpreters.lox;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Environment {
     final Environment enclosing;
-    private final Map<String, Object> values = new HashMap<>();
+    // LinkedHashMap rather than HashMap: a plain HashMap would list bindings in
+    // an arbitrary order, so the visualizer's Scope Stack would shuffle names
+    // around between runs. Insertion order is declaration order, which is what
+    // someone reading the panel expects to see.
+    private final Map<String, Object> values = new LinkedHashMap<>();
 
     Environment() {
         enclosing = null;
@@ -43,5 +48,14 @@ public class Environment {
 
     void define(String name, Object value) {
         values.put(name, value);
+    }
+
+    /**
+     * Read-only view of the bindings declared in THIS scope, ignoring anything
+     * reachable through `enclosing`. Used by {@link TraceExporter} to snapshot
+     * the environment chain one frame at a time.
+     */
+    Map<String, Object> bindings() {
+        return Collections.unmodifiableMap(values);
     }
 }

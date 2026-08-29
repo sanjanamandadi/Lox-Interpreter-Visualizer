@@ -1,2 +1,10 @@
 *.class
 bin/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Local backend URL overrides; frontend/.env.example is the committed template.
+frontend/.env
+frontend/.env.local
