@@ -4,7 +4,8 @@ An interactive visualizer for a Java-based **Lox interpreter**. This tool is int
 
 The application captures real-time state from the Lox interpreter, including lexical tokens, AST nodes, visitor call stacks, and environment scope chains and streams them to an interactive frontend. 
 
-**Live Demo:** [https://lox-interpreter.vercel.app](https://lox-interpreter.vercel.app)
+**Try it Live:** [https://lox-interpreter.vercel.app](https://lox-interpreter.vercel.app)
+
 ![Lox Visualizer Demo](./demo.gif)
 
 ---
