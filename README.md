@@ -16,7 +16,7 @@ The application captures real-time state from the Lox interpreter, including lex
 * **Dual Execution Modes:**
   * **Guided Walkthrough:** Pre-written Lox program, offline execution trace with step-by-step commentary.
   * **Sandbox Mode:** Custom Lox code editor with real-time execution via the live Java backend.
-* **Rich State Inspection:** Live panels for AST tree visualization, token streams, visitor call stacks, and environment scope chains.
+* **State Inspection:** Live panels for AST tree visualization, token streams, visitor call stacks, and environment scope chains.
 
 ---
 
