@@ -20,6 +20,19 @@ The application captures real-time state from the Lox interpreter, including lex
 
 ---
 
+## Supported Lox Syntax (Chapters 1–9 of *Crafting Interpreters*)
+
+This interpreter supports core language features through control flow:
+
+* **Variables & Types:** `var x = 10;`, strings `"hello"`, booleans `true`/`false`, `nil`.
+* **Arithmetic & Logic:** `+`, `-`, `*`, `/`, `<`, `>`, `==`, `!=`, `and`, `or`, `!`.
+* **Statements:** `print "hello";`, block scopes `{ var inner = 1; }`.
+* **Control Flow:** `if (condition) { ... } else { ... }`, `while (x > 0) { ... }`, `for (var i = 0; i < 5; i = i + 1) { ... }`.
+
+*Note: Functions (`fun`), classes (`class`), and inheritance are not included in this build.*
+
+---
+
 ## Architecture & Tech Stack
 
 * **Backend:** Java 17 (`com.sun.net.httpserver`), Docker, Render
