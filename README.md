@@ -1,10 +1,21 @@
 # Lox Interpreter & Execution Visualizer
 
-An interactive visualizer for a Java-based **Lox interpreter** (*Crafting Interpreters* by Robert Nystrom, Chapters 1–9).
+An interactive visualizer for a Java-based **Lox interpreter**. This tool is intended for users reading Robert Nystrom's *Crafting Interpreters* (chapters 1-9) or anyone interested in visualizing core interpreter processes.
 
-The application captures real-time state from the Java interpreter, including lexical tokens, AST nodes, visitor call stacks, and environment scope chains—and streams them to an interactive frontend.
+The application captures real-time state from the Lox interpreter, including lexical tokens, AST nodes, visitor call stacks, and environment scope chains and streams them to an interactive frontend. 
 
 **Live Demo:** [https://lox-interpreter.vercel.app](https://lox-interpreter.vercel.app)
+![Lox Visualizer Demo](./demo.gif)
+
+---
+
+## Key Features
+
+* **Interactive Stepper:** Forward, backward, pause, and step-by-step program execution tracking.
+* **Dual Execution Modes:**
+  * **Guided Walkthrough:** Pre-written Lox program, offline execution trace with step-by-step commentary.
+  * **Sandbox Mode:** Custom Lox code editor with real-time execution via the live Java backend.
+* **Rich State Inspection:** Live panels for AST tree visualization, token streams, visitor call stacks, and environment scope chains.
 
 ---
 
@@ -27,16 +38,6 @@ lox-interpreter/
 
 ---
 
-## Keyboard Shortcuts
-
-| Key | Action |
-|---|---|
-| `→` / `j` | Step forward |
-| `←` / `k` | Step back |
-| `Space` | Play / Pause |
-
----
-
 ## Running Locally
 
 ### 1. Backend (Java)
@@ -51,3 +52,13 @@ cd frontend
 npm install
 npm run dev
 ```
+---
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|---|---|
+| `→` / `j` | Step forward |
+| `←` / `k` | Step back |
+| `Space` | Play / Pause |
+
