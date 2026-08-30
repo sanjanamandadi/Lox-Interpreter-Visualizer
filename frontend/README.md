@@ -1,4 +1,3 @@
-```text
 # Lox Interpreter & Execution Visualizer
 
 An interactive visualizer for a Java-based **Lox interpreter** (*Crafting Interpreters* by Robert Nystrom, Chapters 1–9).
@@ -14,7 +13,7 @@ The application captures real-time state from the Java interpreter, including le
 * **Backend:** Java 17 (`com.sun.net.httpserver`), Docker, Render
 * **Frontend:** React 19, Vite 8, Tailwind CSS v4, Lucide Icons, Vercel
 
-```
+```text
 lox-interpreter/
 ├── src/                                    # Java Lox Interpreter & Trace Engine
 │   └── com/craftinginterpreters/lox/
@@ -51,5 +50,4 @@ java -cp bin com.craftinginterpreters.lox.TraceServer
 cd frontend
 npm install
 npm run dev
-```
 ```
